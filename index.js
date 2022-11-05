@@ -1,9 +1,9 @@
+/* eslint-disable no-empty */
 import colors from 'colors';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import mongoose from 'mongoose';
-import productHandler from './routeHandler/productHandler.js';
+import { MongoClient } from 'mongodb';
 
 // port and env
 dotenv.config();
@@ -14,24 +14,26 @@ app.use(cors());
 app.use(express.json());
 
 // Set up default mongoose connection
-const mongoDB = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.5ty8ljz.mongodb.net/inventory?retryWrites=true&w=majority`;
+const mongoDB = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.5ty8ljz.mongodb.net/?retryWrites=true&w=majority`;
+
+const client = new MongoClient(mongoDB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 const run = async () => {
     try {
-        mongoose.connect(
-            mongoDB,
-            {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-            },
-            () => console.log('db connected'.bgMagenta)
-        );
-    } catch (err) {
-        console.log(err);
+        const productCollection = client.db('inventory').collection('products');
+        app.get('/products', async (req, res) => {
+            const query = {};
+            const cursor = productCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
+        });
+    } finally {
     }
 };
-run();
-app.use('/product', productHandler);
+run().catch((err) => console.log(err));
 
 colors.setTheme({
     info: 'green',
@@ -70,5 +72,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-    console.log('Server running on port'.warn.italic, port);
+    console.log('Server running on ports'.warn.italic, port);
 });
