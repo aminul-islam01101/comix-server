@@ -3,7 +3,7 @@ import colors from 'colors';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectID } from 'mongodb';
 
 // port and env
 dotenv.config();
@@ -29,6 +29,12 @@ const run = async () => {
             const cursor = productCollection.find(query);
             const products = await cursor.toArray();
             res.send(products);
+        });
+        app.get('/products/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: ObjectID(id) };
+            const product = await productCollection.findOne(query);
+            res.send(product);
         });
     } finally {
     }
