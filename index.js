@@ -28,6 +28,8 @@ const client = new MongoClient(mongoDB, {
 const run = async () => {
     try {
         const productCollection = client.db('inventory').collection('products');
+        const orderCollection = client.db('inventory').collection('orders');
+
         app.get('/products', async (req, res) => {
             const query = {};
             const page = Number(req.query.page);
@@ -49,6 +51,11 @@ const run = async () => {
             const query = { _id: ObjectID(id) };
             const product = await productCollection.findOne(query);
             res.send(product);
+        });
+        app.post('/orders', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result);
         });
     } finally {
     }
