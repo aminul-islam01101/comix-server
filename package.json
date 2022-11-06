@@ -4,7 +4,7 @@
     "main": "index.js",
     "type": "module",
     "license": "MIT",
-    "proxy": "http://127.0.0.1:3000",
+
     "scripts": {
         "start": "node index.js",
         "build": "node index.js",

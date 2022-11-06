@@ -12,6 +12,10 @@ const port = process.env.PORT;
 // middleware
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+});
 
 // Set up default mongoose connection
 const mongoDB = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.5ty8ljz.mongodb.net/?retryWrites=true&w=majority`;
