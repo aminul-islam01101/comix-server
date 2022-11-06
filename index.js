@@ -26,8 +26,16 @@ const run = async () => {
         const productCollection = client.db('inventory').collection('products');
         app.get('/products', async (req, res) => {
             const query = {};
+            const page = Number(req.query.page);
+            const size = Number(req.query.size);
+            console.log(page, size);
+
             const cursor = productCollection.find(query);
-            const products = await cursor.toArray();
+            // const products = await cursor.limit(10).toArray();
+            const products = await cursor
+                .skip(page * size)
+                .limit(size)
+                .toArray();
             const count = await productCollection.estimatedDocumentCount();
 
             res.send({ count, products });
