@@ -29,6 +29,11 @@ const run = async () => {
     try {
         const productCollection = client.db('inventory').collection('products');
         const orderCollection = client.db('inventory').collection('orders');
+        const meetupOptionsCollection = client.db('comix').collection('meetupOptions');
+
+        app.get('/meetupOptions', async (req, res) =>
+            res.send(await meetupOptionsCollection.find({}).toArray())
+        );
 
         app.get('/products', async (req, res) => {
             const query = {};
