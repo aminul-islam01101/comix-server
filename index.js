@@ -110,12 +110,12 @@ const run = async () => {
         });
 
         // GET all my bookings
-        app.get('/bookings', verifyJWT, async (req, res) => {
+        app.get('/bookings', async (req, res) => {
             const { email } = req.query;
-            const decodedEmail = req.decoded.email;
-            if (email !== decodedEmail) {
-                return res.status(403).send({ message: 'forbidden access' });
-            }
+            // const decodedEmail = req.decoded.email;
+            // if (email !== decodedEmail) {
+            //     return res.status(403).send({ message: 'forbidden access' });
+            // }
 
             console.log(req.headers.authorization);
 
