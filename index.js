@@ -54,6 +54,7 @@ const run = async () => {
         const meetupOptionsCollection = client.db('comix').collection('meetupOptions');
         const bookingsCollection = client.db('comix').collection('bookings');
         const usersCollection = client.db('comix').collection('users');
+        const herosCollection = client.db('comix').collection('heros');
 
         // users api
         // all users GET
@@ -84,7 +85,7 @@ const run = async () => {
 
             if (user) {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, {
-                    expiresIn: '1h',
+                    expiresIn: '10d',
                 });
                 return res.send({ accessToken: token });
             }
@@ -95,6 +96,8 @@ const run = async () => {
             const { id } = req.params;
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
+            console.log('inside put');
+
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
                 return res.status(403).send({ message: 'forbidden access' });
@@ -116,6 +119,34 @@ const run = async () => {
             const query = { email };
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' });
+        });
+
+        // admin role: add heros
+        // sorting hero genre
+        app.get('/genre', async (req, res) => {
+            const query = {};
+            const result = await meetupOptionsCollection
+                .find(query)
+                .project({ genre: 1 })
+                .toArray();
+            res.send(result);
+        });
+        // ADD Heros POST operation
+        app.post('/heros', async (req, res) => {
+            const hero = req.body;
+            const result = await herosCollection.insertOne(hero);
+            res.send(result);
+        });
+        // ADD Heros POST operation
+        app.get('/heros', async (req, res) =>
+            res.send(await herosCollection.find(req.body).toArray())
+        );
+        // DELETE Hero Operation
+        app.delete('/heros/:id', async (req, res) => {
+            const { id } = req.params;
+            const filter = { _id: ObjectId(id) };
+            const result = await herosCollection.deleteOne(filter);
+            res.send(result);
         });
 
         // booking data post operation
