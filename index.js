@@ -6,7 +6,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { MongoClient, ObjectID } from 'mongodb';
+import { MongoClient, ObjectId, ObjectID } from 'mongodb';
 
 // port and env
 dotenv.config();
@@ -56,6 +56,11 @@ const run = async () => {
         const usersCollection = client.db('comix').collection('users');
 
         // users api
+        // all users GET
+        app.get('/users', async (req, res) =>
+            res.send(await usersCollection.find(req.body).toArray())
+        );
+
         // Users POST operation
         app.post('/users', async (req, res) => {
             const { email } = req.body;
@@ -85,6 +90,33 @@ const run = async () => {
             }
             res.status(403).send({ accessToken: 'test token' });
         });
+        // user  Setting admin role UPDATE Operation
+        // app.put('/users/admin/:id', async (req, res) => {
+        //     const { id } = req.params;
+        //     const decodedEmail = req.decoded.email;
+        //     const query = { email: decodedEmail };
+        //     const user = await usersCollection.findOne(query);
+        //     if (user?.role !== 'admin') {
+        //         return res.status(403).send({ message: 'forbidden access' });
+        //     }
+
+        //     const filter = { _id: ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: {
+        //             role: 'admin',
+        //         },
+        //     };
+        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // });
+        // admin role check GET operation
+        // app.get('/users/admin/:email', async (req, res) => {
+        //     const { email } = req.params;
+        //     const query = { email };
+        //     const user = await usersCollection.findOne(query);
+        //     res.send({ isAdmin: user?.role === 'admin' });
+        // });
 
         // booking data post operation
         app.get('/meetupOptions', async (req, res) => {
@@ -110,12 +142,12 @@ const run = async () => {
         });
 
         // GET all my bookings
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings', verifyJWT, async (req, res) => {
             const { email } = req.query;
-            // const decodedEmail = req.decoded.email;
-            // if (email !== decodedEmail) {
-            //     return res.status(403).send({ message: 'forbidden access' });
-            // }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
 
             console.log(req.headers.authorization);
 
