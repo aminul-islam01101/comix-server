@@ -91,25 +91,25 @@ const run = async () => {
             res.status(403).send({ accessToken: 'test token' });
         });
         // user  Setting admin role UPDATE Operation
-        // app.put('/users/admin/:id', async (req, res) => {
-        //     const { id } = req.params;
-        //     const decodedEmail = req.decoded.email;
-        //     const query = { email: decodedEmail };
-        //     const user = await usersCollection.findOne(query);
-        //     if (user?.role !== 'admin') {
-        //         return res.status(403).send({ message: 'forbidden access' });
-        //     }
+        app.put('/users/admin/:id', async (req, res) => {
+            const { id } = req.params;
+            // const decodedEmail = req.decoded.email;
+            // const query = { email: decodedEmail };
+            // const user = await usersCollection.findOne(query);
+            // if (user?.role !== 'admin') {
+            //     return res.status(403).send({ message: 'forbidden access' });
+            // }
 
-        //     const filter = { _id: ObjectId(id) };
-        //     const options = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: {
-        //             role: 'admin',
-        //         },
-        //     };
-        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
-        //     res.send(result);
-        // });
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    role: 'admin',
+                },
+            };
+            const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
         // admin role check GET operation
         // app.get('/users/admin/:email', async (req, res) => {
         //     const { email } = req.params;
