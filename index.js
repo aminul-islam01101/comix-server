@@ -1,8 +1,11 @@
+/* eslint-disable consistent-return */
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-empty */
 import colors from 'colors';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { MongoClient, ObjectID } from 'mongodb';
 
 // port and env
@@ -24,17 +27,117 @@ const client = new MongoClient(mongoDB, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).send('unauthorized access');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
+        req.decoded = decoded;
+        console.log(req.decoded);
+        next();
+    });
+}
 
 const run = async () => {
     try {
         const productCollection = client.db('inventory').collection('products');
         const orderCollection = client.db('inventory').collection('orders');
+        // meetupOptionsCollection == heroName, time slots
         const meetupOptionsCollection = client.db('comix').collection('meetupOptions');
+        const bookingsCollection = client.db('comix').collection('bookings');
+        const usersCollection = client.db('comix').collection('users');
 
-        app.get('/meetupOptions', async (req, res) =>
-            res.send(await meetupOptionsCollection.find({}).toArray())
-        );
+        // users api
+        // Users POST operation
+        app.post('/users', async (req, res) => {
+            const { email } = req.body;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
 
+            if (user) {
+                return res.send({ message: 'user already added' });
+            }
+            res.send(await usersCollection.insertOne(req.body));
+        });
+
+        // jwt for user
+        app.get('/jwt', async (req, res) => {
+            const { email } = req.query;
+            const query = { email };
+            console.log(email);
+
+            const user = await usersCollection.findOne(query);
+            console.log(user);
+
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, {
+                    expiresIn: '1h',
+                });
+                return res.send({ accessToken: token });
+            }
+            res.status(403).send({ accessToken: 'test token' });
+        });
+
+        // booking data post operation
+        app.get('/meetupOptions', async (req, res) => {
+            // finding all available meetings options
+            const allMeetupOptions = await meetupOptionsCollection.find({}).toArray();
+            // booking query
+            const { meetupDate } = req.query;
+            console.log(meetupDate);
+
+            const bookingQuery = { meetupDate };
+            // already booked meetings options in a particular day: booked meetings options array
+            const alreadyBooked = await bookingsCollection.find(bookingQuery).toArray();
+            // filtering booked meetings options from all available meetings options
+            allMeetupOptions.forEach((option) => {
+                const allOptionBooked = alreadyBooked.filter(
+                    (optionBooked) => optionBooked.heroName === option.name
+                );
+                const bookedSlots = allOptionBooked.map((booked) => booked.timeSlot);
+                const remainingSlots = option.slots.filter((slot) => !bookedSlots.includes(slot));
+                option.slots = remainingSlots;
+            });
+            res.send(allMeetupOptions);
+        });
+
+        // GET all my bookings
+        app.get('/bookings', async (req, res) => {
+            const { email } = req.query;
+            // const decodedEmail = req.decoded.email;
+            // if (email !== decodedEmail) {
+            //     return res.status(403).send({ message: 'forbidden access' });
+            // }
+
+            console.log(req.headers.authorization);
+
+            res.send(await bookingsCollection.find({ email }).toArray());
+        });
+
+        // booking POST operation
+        app.post('/bookings', async (req, res) => {
+            const { email, heroName, meetupDate } = req.body;
+
+            const alreadyBooked = await bookingsCollection
+                .find({ email, heroName, meetupDate })
+                .toArray();
+
+            if (alreadyBooked.length) {
+                const message = `You already have a booking on ${meetupDate}`;
+                return res.send({ acknowledged: false, message });
+            }
+
+            return res.send(await bookingsCollection.insertOne(req.body));
+        });
+        // all  products get operation
         app.get('/products', async (req, res) => {
             const query = {};
             const page = Number(req.query.page);
@@ -86,7 +189,7 @@ colors.setTheme({
 // run();
 
 app.get('/', (_req, res) => {
-    res.send(' test server');
+    res.send('test server');
 });
 // Error middleware
 // 404 handlers
